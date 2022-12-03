@@ -44,6 +44,7 @@ router.post("/register", async (req, res) => {
     const user = await User.create({
       first_name,
       last_name,
+      
       email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
     });
@@ -52,6 +53,7 @@ router.post("/register", async (req, res) => {
     const token = jwt.sign(
       { user_id: user._id, email },
       process.env.ACCESS_TOKEN_SECRET,
+
       {
         // expiresIn: "2h",
       }
