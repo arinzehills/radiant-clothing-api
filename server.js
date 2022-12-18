@@ -2,13 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const { default: helmet } = require("helmet");
 const app = express();
-const port = 3000 || process.env.PORT;
+const port = 3002 || process.env.PORT;
 const http = require("http");
 const server = http.createServer(app);
 const cors = require("cors");
 
-// const db = process.env.DB_URL;
-const db = "mongodb://localhost:27017/radiant_db";
+const db = process.env.DB_URL;
+// const db = "mongodb://localhost:27017/radiant_db";
 require("./config/mongo.js")(db);
 app.use(express.json()); //making sure the server can use json, this is use to make the app able to use json
 app.use(helmet());
