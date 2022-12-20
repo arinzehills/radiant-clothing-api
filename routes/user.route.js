@@ -18,7 +18,7 @@ router.post("/register", async (req, res) => {
   // Our register logic starts here
   try {
     // Get user input
-    const { first_name, last_name, email, password } = req.body;
+    const { full_name, email, password } = req.body;
 
     // Validate user input
     if (!(email && password)) {
@@ -42,9 +42,7 @@ router.post("/register", async (req, res) => {
 
     // Create user in our database
     const user = await User.create({
-      first_name,
-      last_name,
-
+      full_name,
       email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
     });
@@ -195,6 +193,13 @@ router.get("/getAllUsers", async (req, res) => {
   User.find({}, function (err, users) {
     res.send(users);
   }).select("-password");
+});
+
+router.post("/getAllCustomers", async (req, res) => {
+  // console.log(req.user)
+  var users = await User.find({ user_type: "business_user" }).lean();
+
+  res.json(users);
 });
 
 module.exports = router;
