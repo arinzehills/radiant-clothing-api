@@ -4,6 +4,7 @@ const ProductCategory = require("../../models/productcategory.model");
 const upload = require("../../middleware/multer");
 const cloudinary = require("../../config/cloudinary.js");
 const fs = require("fs");
+const auth = require("../../middleware/auth");
 
 uploadImage = upload.single("image");
 router.post("/addCategory", async (req, res) => {

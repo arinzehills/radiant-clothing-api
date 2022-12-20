@@ -44,7 +44,7 @@ router.post("/register", async (req, res) => {
     const user = await User.create({
       first_name,
       last_name,
-      
+
       email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
     });
@@ -114,6 +114,18 @@ router.post("/login", async (req, res) => {
     console.log(err);
   }
   // Our register logic ends here
+});
+router.post("/logout", auth, async (req, res) => {
+  try {
+    // res.cookie("jwt", "", { maxAge: "1" }); //set token to empty and also max expiring to 1 sec
+    res.clearCookie("jwt");
+    return res.status(200).json({
+      success: true,
+      message: "Logged out Successfully 🙌 ",
+    });
+  } catch (error) {
+    console.log(error);
+  }
 });
 router.post("/updateUser", auth, async (req, res) => {
   await User.findByIdAndUpdate(req.user.user_id, req.body, {
