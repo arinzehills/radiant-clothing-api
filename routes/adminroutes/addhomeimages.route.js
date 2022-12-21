@@ -5,6 +5,7 @@ const upload = require("../../middleware/multer");
 const router = express.Router();
 const cloudinary = require("../../config/cloudinary.js");
 const fs = require("fs");
+const cloudinaryv2 = require("cloudinary");
 
 uploadImage = upload.array("image");
 
@@ -49,7 +50,8 @@ router.post("/addHomeImages", auth, async (req, res) => {
 router.post("/getHomeimages", async (req, res) => {
   try {
     var images = await HomeImage.find({}).lean();
-
+    // cloudinary.v2.uploader.destroy('sample', function(error,result) {
+    //   console.log(result, error) }
     res.status(200).json({
       success: true,
       message: "fetched Successfully 🙌 ",
@@ -66,13 +68,23 @@ router.post("/getHomeimages", async (req, res) => {
 });
 router.post("/deleteHomeimage", async (req, res) => {
   try {
-    console.log("hitted delete" + req.query.id);
-    var images = await HomeImage.findByIdAndDelete(req.query.id);
-
+    var image = await HomeImage.findByIdAndDelete(req.query.id);
+    const url = image.image;
+    const url2 = url.split("/").pop();
+    const filename = url2.substring(0, url2.lastIndexOf("."));
+    console.log(filename);
+    cloudinaryv2.v2.uploader.destroy(
+      "HomepageImages/" + filename,
+      { resource_type: "image", type: "upload" },
+      function (error, result) {
+        console.log("result:", result);
+        console.log("error:", error);
+      }
+    );
     res.status(200).json({
       success: true,
       message: "deleted Successfully 🙌 ",
-      images: images,
+      images: image,
     });
   } catch (err) {
     console.log(err);
