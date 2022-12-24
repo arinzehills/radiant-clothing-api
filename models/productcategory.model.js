@@ -7,6 +7,7 @@ const productCategorySchema = new mongoose.Schema(
       default: "",
       // required: true
     },
+    super_category: { type: String, max: 200, unique: true },
     category: { type: String, max: 200, unique: true },
     description: { type: String, max: 700 },
     image: { type: String },
