@@ -18,7 +18,7 @@ router.post("/register", async (req, res) => {
   // Our register logic starts here
   try {
     // Get user input
-    const { full_name, email, password } = req.body;
+    const { full_name, phone, email, password } = req.body;
 
     // Validate user input
     if (!(email && password)) {
@@ -43,6 +43,7 @@ router.post("/register", async (req, res) => {
     // Create user in our database
     const user = await User.create({
       full_name,
+      phone,
       email: email.toLowerCase(), // sanitize: convert email to lowercase
       password: encryptedPassword,
     });

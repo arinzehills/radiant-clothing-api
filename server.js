@@ -20,7 +20,7 @@ app.get("/", function (req, res) {
 });
 // routes
 app.use("/", require("./routes/user.route"));
-app.use("/admin", require("./routes/adminroutes/addcategory.route"));
+app.use("/admin", require("./routes/adminroutes/category.route"));
 app.use("/admin", require("./routes/adminroutes/products.route"));
 app.use("/admin", require("./routes/adminroutes/addhomeimages.route"));
 // app.use("/admin", require("./routes/adminroutes/addcategory.route"));
