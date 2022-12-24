@@ -35,7 +35,7 @@ router.post("/addCategory", async (req, res) => {
       const newPath = await uploader(path);
       fs.unlinkSync(path);
       const newCategory = new ProductCategory({
-        category: req.body.super_category,
+        super_category: req.body.super_category,
         category: req.body.category,
         image: newPath.url,
       });
