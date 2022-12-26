@@ -2,6 +2,10 @@ require("dotenv").config();
 const express = require("express");
 const { default: helmet } = require("helmet");
 const app = express();
+const shortId = require("shortid");
+const Razorpay = require("razorpay");
+const paymentRouter = require("./routes/payment");
+
 const port = 3002 || process.env.PORT;
 const http = require("http");
 const server = http.createServer(app);
@@ -18,11 +22,13 @@ app.get("/", function (req, res) {
   res.setHeader("Content-Type", "text/html");
   res.end("<h1>Radiant Clothin API</h1>");
 });
+
 // routes
 app.use("/", require("./routes/user.route"));
 app.use("/admin", require("./routes/adminroutes/category.route"));
 app.use("/admin", require("./routes/adminroutes/products.route"));
 app.use("/admin", require("./routes/adminroutes/addhomeimages.route"));
+app.use("/payment", paymentRouter);
 // app.use("/admin", require("./routes/adminroutes/addcategory.route"));
 
 server.listen(port, () => {
