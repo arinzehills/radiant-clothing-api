@@ -169,6 +169,7 @@ router.post("/updateProfilePicture", auth, async (req, res) => {
     }
   });
 });
+
 router.post("/getUser", auth, async (req, res) => {
   // console.log(req.user)
 
