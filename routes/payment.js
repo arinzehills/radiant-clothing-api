@@ -8,12 +8,12 @@ router.post("/order", (req, res) => {
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
-      key_secret: process.env.KEY_SECRET
+      key_secret: process.env.KEY_SECRET,
     });
     const options = {
       amount: req.body.amount * 100,
       currency: "INR",
-      receipt: crypto.randomBytes(20).toString("hex")
+      receipt: crypto.randomBytes(20).toString("hex"),
     };
     instance.orders.create(options, (error, order) => {
       if (error) {
@@ -57,8 +57,8 @@ router.post("/verify", async (req, res) => {
         razorpay: {
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
-          signature: razorpay_signature
-        }
+          signature: razorpay_signature,
+        },
       });
       const newOrder = await order.save();
       console.log(newOrder);
@@ -70,8 +70,8 @@ router.post("/verify", async (req, res) => {
         razorpay: {
           orderId: razorpay_order_id || null,
           paymentId: razorpay_payment_id || null,
-          signature: razorpay_signature || null
-        }
+          signature: razorpay_signature || null,
+        },
       });
       const newOrder = await order.save();
       console.log(newOrder);
