@@ -7,8 +7,8 @@ const orderSchema = new mongoose.Schema(
     razorpay: {
       paymentId: String,
       orderId: String,
-      signature: String
-    }
+      signature: String,
+    },
   },
   { timestamps: true }
 );

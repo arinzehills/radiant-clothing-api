@@ -14,6 +14,7 @@ router.post("/addProduct", async (req, res) => {
       console.log(err);
       return res.status(400).send({ message: err.message });
     }
+
     const uploader = async (path) => await cloudinary.uploads(path, "Products");
     try {
       const urls = [];
@@ -26,8 +27,8 @@ router.post("/addProduct", async (req, res) => {
         urls.push(newPath.url);
       }
 
-      console.log(urls);
-      console.log(files);
+      //   console.log(urls);
+      //   console.log(files);
 
       const newProduct = new Product({
         ...req.body,
