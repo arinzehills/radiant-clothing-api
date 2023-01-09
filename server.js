@@ -6,7 +6,7 @@ const shortId = require("shortid");
 const Razorpay = require("razorpay");
 const paymentRouter = require("./routes/payment");
 
-const port = 3002 || process.env.PORT;
+const port = 3005 || process.env.PORT;
 const http = require("http");
 const server = http.createServer(app);
 const cors = require("cors");
