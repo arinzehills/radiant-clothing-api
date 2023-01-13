@@ -3,17 +3,25 @@ const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Order = require("../models/Order.model");
 
+function isToday(date) {
+  const today = new Date();
+  if (today.toDateString() === date.toDateString()) {
+    return true;
+  }
+  return false;
+}
+
 // order api
 router.post("/order", (req, res) => {
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
-      key_secret: process.env.KEY_SECRET,
+      key_secret: process.env.KEY_SECRET
     });
     const options = {
       amount: req.body.amount * 100,
       currency: "INR",
-      receipt: crypto.randomBytes(20).toString("hex"),
+      receipt: crypto.randomBytes(20).toString("hex")
     };
     instance.orders.create(options, (error, order) => {
       if (error) {
@@ -32,9 +40,33 @@ router.post("/order", (req, res) => {
 
 // get orders
 router.get("/orders", async (req, res) => {
+  const analytics = {};
+  let totalRevenue = 0;
+  let recentOrders = [];
+  let totalSalesToday = 0;
+  let totalOrdersToday = 0;
+
   try {
     const orders = await Order.find();
-    res.status(200).json({ data: orders });
+
+    // get the total sales
+    orders.forEach((order) => (totalRevenue += order.amount));
+
+    // get 5 recent orders
+    recentOrders = orders.filter((_, idx) => idx < 5);
+
+    // get total orders today.
+    let todayTransactions = orders.filter((order) => isToday(order.createdAt));
+    const salesToday = todayTransactions.forEach(
+      (item) => (totalSalesToday += item.amount)
+    );
+    // append the populated variable to analytics object
+    analytics.totalRevenue = totalRevenue;
+    analytics.recentOrders = recentOrders;
+    analytics.totalOrdersToday = todayTransactions.length;
+    analytics.totalSalesToday = salesToday;
+
+    res.status(200).json({ data: { orders, analytics } });
   } catch (error) {
     res.status(400).json({ error });
   }
@@ -57,8 +89,8 @@ router.post("/verify", async (req, res) => {
         razorpay: {
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
-          signature: razorpay_signature,
-        },
+          signature: razorpay_signature
+        }
       });
       const newOrder = await order.save();
       console.log(newOrder);
@@ -70,8 +102,8 @@ router.post("/verify", async (req, res) => {
         razorpay: {
           orderId: razorpay_order_id || null,
           paymentId: razorpay_payment_id || null,
-          signature: razorpay_signature || null,
-        },
+          signature: razorpay_signature || null
+        }
       });
       const newOrder = await order.save();
       console.log(newOrder);
