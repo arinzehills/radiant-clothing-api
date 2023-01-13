@@ -44,7 +44,6 @@ router.get("/orders", async (req, res) => {
   let totalRevenue = 0;
   let recentOrders = [];
   let totalSalesToday = 0;
-  let totalOrdersToday = 0;
 
   try {
     const orders = await Order.find();
@@ -57,14 +56,15 @@ router.get("/orders", async (req, res) => {
 
     // get total orders today.
     let todayTransactions = orders.filter((order) => isToday(order.createdAt));
-    const salesToday = todayTransactions.forEach(
-      (item) => (totalSalesToday += item.amount)
-    );
+    todayTransactions.forEach((item) => {
+      totalSalesToday += item.amount;
+    });
     // append the populated variable to analytics object
     analytics.totalRevenue = totalRevenue;
     analytics.recentOrders = recentOrders;
     analytics.totalOrdersToday = todayTransactions.length;
-    analytics.totalSalesToday = salesToday;
+    analytics.totalSalesToday = totalSalesToday;
+    console.log(totalSalesToday);
 
     res.status(200).json({ data: { orders, analytics } });
   } catch (error) {
