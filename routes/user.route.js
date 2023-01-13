@@ -10,6 +10,7 @@ const upload = require("../middleware/multer");
 
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const e = require("express");
 
 router.get("/showhomepage", async (req, res) => {
   res.send("Hellos");
@@ -136,6 +137,48 @@ router.post("/updateUser", auth, async (req, res) => {
     message: "Info retrieved successfully 🙌 ",
     user: user,
   });
+});
+router.post("/changePassword", auth, async (req, res) => {
+  try {
+    var user = await User.findById(req.user.user_id).lean();
+    const email = req.user.email;
+    const { old_password, new_password } = req.body;
+    console.log("password");
+    console.log(old_password);
+    console.log(new_password);
+    if (!(old_password && new_password)) {
+      // Validate if user exist in our database
+      return res
+        .status(400)
+        .json({ success: false, message: "All input is required" });
+    }
+    if (user && (await bcrypt.compare(old_password, user.password))) {
+      //Encrypt user password
+      encryptedPassword = await bcrypt.hash(new_password, 10);
+      await User.findByIdAndUpdate(user._id, { password: encryptedPassword });
+      const token = jwt.sign(
+        { user_id: user._id, email },
+        process.env.ACCESS_TOKEN_SECRET
+        // {
+        //   expiresIn: "2h",
+        // }
+      );
+
+      // save user token
+      user.token = token;
+      return res.status(200).json({
+        success: true,
+        message: "Password Changed successfully 🙌 ",
+        user: user,
+      });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect old password" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
 });
 const uploadPicture = upload.single("image");
 
