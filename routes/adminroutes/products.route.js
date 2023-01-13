@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../../models/product.model");
+const Gst = require("../../models/gst.model");
 const upload = require("../../middleware/multer");
 const cloudinary = require("../../config/cloudinary.js");
 const fs = require("fs");
@@ -8,6 +9,30 @@ const cloudinaryv2 = require("cloudinary");
 
 uploadProductImage = upload.array("image");
 
+router.post("/editGst", async (req, res) => {
+  const gst = Gst.findOne({ gst: req.body.old_gst });
+  try {
+    const update = { $set: { gst: req.body.gst } };
+    const updatedGst = await Gst.updateOne(gst, update, { upsert: true });
+    res.status(200).json({
+      success: true,
+      message: "added in Successfully 🙌",
+      updatedGst: updatedGst,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+router.post("/getGst", async (req, res) => {
+  const gst = await Gst.find({}).lean();
+  try {
+    res.status(200).json({
+      gst: gst[0].gst,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
 router.post("/addProduct", async (req, res) => {
   uploadProductImage(req, res, async function (err) {
     if (err) {
