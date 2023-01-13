@@ -32,9 +32,33 @@ router.post("/order", (req, res) => {
 
 // get orders
 router.get("/orders", async (req, res) => {
+  const analytics = {};
+  let totalRevenue = 0;
+  let recentOrders = [];
+  let totalSalesToday = 0;
+
   try {
     const orders = await Order.find();
-    res.status(200).json({ data: orders });
+
+    // get the total sales
+    orders.forEach((order) => (totalRevenue += order.amount));
+
+    // get 5 recent orders
+    recentOrders = orders.filter((_, idx) => idx < 5);
+
+    // get total orders today.
+    let todayTransactions = orders.filter((order) => isToday(order.createdAt));
+    todayTransactions.forEach((item) => {
+      totalSalesToday += item.amount;
+    });
+    // append the populated variable to analytics object
+    analytics.totalRevenue = totalRevenue;
+    analytics.recentOrders = recentOrders;
+    analytics.totalOrdersToday = todayTransactions.length;
+    analytics.totalSalesToday = totalSalesToday;
+    console.log(totalSalesToday);
+
+    res.status(200).json({ data: { orders, analytics } });
   } catch (error) {
     res.status(400).json({ error });
   }
