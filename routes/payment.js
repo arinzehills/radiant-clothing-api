@@ -2,6 +2,15 @@ const router = require("express").Router();
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Order = require("../models/Order.model");
+const User = require("../models/user.model");
+
+function isToday(date) {
+  const today = new Date();
+  if (today.toDateString() === date.toDateString()) {
+    return true;
+  }
+  return false;
+}
 
 // order api
 router.post("/order", (req, res) => {
@@ -31,7 +40,7 @@ router.post("/order", (req, res) => {
 });
 
 // get orders
-router.get("/orders", async (req, res) => {
+router.post("/orders", async (req, res) => {
   const analytics = {};
   let totalRevenue = 0;
   let recentOrders = [];
@@ -58,8 +67,9 @@ router.get("/orders", async (req, res) => {
     analytics.totalSalesToday = totalSalesToday;
     console.log(totalSalesToday);
 
-    res.status(200).json({ data: { orders, analytics } });
+    res.status(200).json({ orders, analytics, users: User.length });
   } catch (error) {
+    console.log(error);
     res.status(400).json({ error });
   }
 });
