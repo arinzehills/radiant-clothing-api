@@ -8,7 +8,7 @@ const productCategorySchema = new mongoose.Schema(
       // required: true
     },
     super_category: { type: String, max: 200 },
-    category: { type: String, max: 200, unique: true },
+    category: { type: String, max: 200 },
     description: { type: String, max: 700 },
     image: { type: String },
     // comments: { type: Array, default: [] },
