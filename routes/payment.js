@@ -48,6 +48,7 @@ router.post("/orders", async (req, res) => {
 
   try {
     const orders = await Order.find();
+    var users = await User.find({ user_type: "business_user" }).lean();
 
     // get the total sales
     orders.forEach((order) => (totalRevenue += order.amount));
@@ -67,7 +68,7 @@ router.post("/orders", async (req, res) => {
     analytics.totalSalesToday = totalSalesToday;
     console.log(totalSalesToday);
 
-    res.status(200).json({ orders, analytics, users: User.length });
+    res.status(200).json({ users: users.length, orders, analytics });
   } catch (error) {
     console.log(error);
     res.status(400).json({ error });
