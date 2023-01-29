@@ -116,5 +116,33 @@ router.post("/verify", async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 });
+router.post("/add_billing_address", async (req, res) => {
+  // await User.findByIdAndUpdate(req.user.user_id, req.body, {
+  //   useFindAndModify: false,
+  // });
+  try {
+    var user = await User.findById(req.body.user_id);
+    await user.updateOne({
+      $push: { billing_address: req.body.billing_address },
+    });
+    res.status(200).json({ message: "Added Successfully", user: user });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+router.post("/getBillingAddress", async (req, res) => {
+  try {
+    var user = await User.findById(req.body.user_id);
+    console.log(user.billing_address);
+    console.log("req.body");
 
+    res.status(200).json({
+      billing_address: user.billing_address,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
 module.exports = router;

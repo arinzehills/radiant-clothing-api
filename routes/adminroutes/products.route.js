@@ -80,6 +80,7 @@ router.post("/addProduct", async (req, res) => {
   // Our register logic ends here
 });
 router.post("/editProduct", async (req, res) => {
+  console.log(req.body);
   uploadProductImage(req, res, async function (err) {
     if (err) {
       console.log(err);
@@ -147,7 +148,7 @@ router.post("/editProduct", async (req, res) => {
         console.log(oldProduct);
         res.status(200).json({
           success: true,
-          message: "added in Successfully 🙌",
+          message: "Product edited Successfully 🙌",
           product: oldProduct,
         });
       }

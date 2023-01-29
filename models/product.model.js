@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema(
     category: { type: String, default: "" },
     price: { type: String, default: "" },
     discount_price: { type: String, default: "" },
+    gst: { type: String, default: "" },
     description: { type: String },
     quantity: { type: String },
     images: { type: Array, default: [] },

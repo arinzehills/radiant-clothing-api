@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String },
     phone: { type: String },
     address: { type: String },
+    billing_address: { type: Array, default: [] },
     profilePicture: { type: String, default: "" },
     user_type: { type: String, default: "business_user" }, //or admin
     token: { type: String },
