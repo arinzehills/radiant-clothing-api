@@ -2,6 +2,7 @@ const router = require("express").Router();
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Order = require("../models/Order.model");
+const OrderProduct = require("../models/order_product.model");
 const User = require("../models/user.model");
 
 function isToday(date) {
@@ -14,6 +15,7 @@ function isToday(date) {
 
 // order api
 router.post("/order", (req, res) => {
+  console.log(req.body.amount)
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
@@ -77,6 +79,7 @@ router.post("/orders", async (req, res) => {
 
 // payment verify api
 router.post("/verify", async (req, res) => {
+  
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
@@ -88,6 +91,7 @@ router.post("/verify", async (req, res) => {
     if (razorpay_signature === expectedSign) {
       const order = Order({
         isPaid: true,
+        user_id:req.body.user_id,
         amount: req.body.amount,
         razorpay: {
           orderId: razorpay_order_id,
@@ -96,12 +100,22 @@ router.post("/verify", async (req, res) => {
         },
       });
       const newOrder = await order.save();
-      console.log(newOrder);
-      res.status(200).json({ message: "payment verfified successfully" });
+      // console.log(newOrder);
+      const newOrderProduct= new OrderProduct({
+        order_id: razorpay_order_id,
+        totalAmount: req.body.amount,
+        products:req.body.products,
+        billing_address:req.body.billing_address
+      });
+      const orderProduct = await newOrderProduct.save();
+  console.log('req.orderproduct')
+  console.log(orderProduct)
+      res.status(200).json({ message: "payment verfified successfully",orderProduct });
     } else {
       const order = Order({
         isPaid: false,
         amount: req.body.amount,
+        user_id:req.body.user_id,
         razorpay: {
           orderId: razorpay_order_id || null,
           paymentId: razorpay_payment_id || null,
@@ -113,6 +127,7 @@ router.post("/verify", async (req, res) => {
       res.status(400).json("Invalid signature sent");
     }
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: "Something went wrong" });
   }
 });
@@ -138,6 +153,30 @@ router.post("/getBillingAddress", async (req, res) => {
     console.log("req.body");
 
     res.status(200).json({
+      billing_address: user.billing_address,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+router.post("/deleteBillingAddress", async (req, res) => {
+  try {
+    var user = await User.findById(req.body.user_id);
+    const billing_address=user.billing_address
+    console.log(user.billing_address);
+    console.log('billing address is hitted  ');
+    for(addr of billing_address){
+      if(addr.id===req.body.address_id){
+        await user.updateOne({
+          $pull: { billing_address: addr },
+        });
+      }
+    }
+    console.log("req.body");
+
+    res.status(200).json({
+      success:true,
       billing_address: user.billing_address,
     });
   } catch (error) {
