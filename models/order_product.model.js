@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const orderProductSchema = new mongoose.Schema(
   {
       order_id:{ type: String, default: "" },
+      shipment_id:{ type: String, default: "" },
     // product_name: { type: String, default: "" },
     billing_address: { type: Object, default: "" },
     totalAmount: { type: String, default: "" },
