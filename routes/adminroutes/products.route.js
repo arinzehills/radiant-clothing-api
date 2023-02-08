@@ -6,6 +6,7 @@ const upload = require("../../middleware/multer");
 const cloudinary = require("../../config/cloudinary.js");
 const fs = require("fs");
 const cloudinaryv2 = require("cloudinary");
+const auth = require("../../middleware/auth");
 
 uploadProductImage = upload.array("image");
 
@@ -228,5 +229,36 @@ router.post("/deleteProduct", async (req, res) => {
       message: err.message,
     });
   }
+});
+router.post("/reviewProduct", auth, async (req, res) => {
+  const product = await Product.findById(req.body.product_id);
+  const user_id = req.user.user_id;
+  const reviewsIds = [];
+  const rate = {
+    user_email: req.user.email,
+    ratings: req.body.rate,
+    details: req.body.detail,
+  };
+  console.log("product");
+  console.log(product);
+  product?.reviews.forEach((rate) => {
+    reviewsIds.push(rate.user_email);
+  });
+  const index = reviewsIds.indexOf(req.user.email);
+  // if (index >= 0) {
+  //   console.log("users has given rating already");
+  //   return res.status(200).json({
+  //     success: false,
+  //     message: "You have given rating on this product already 🙌 ",
+  //     rate: rate,
+  //   });
+  // }
+  await product.updateOne({ $push: { reviews: rate } });
+
+  res.status(200).json({
+    success: true,
+    message: "rate Successfully 🙌 ",
+    rate: rate,
+  });
 });
 module.exports = router;

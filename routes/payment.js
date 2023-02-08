@@ -17,10 +17,9 @@ function isToday(date) {
   return false;
 }
 
-
 // order api
 router.post("/order", (req, res) => {
-  console.log(req.body.amount)
+  console.log(req.body.amount);
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
@@ -84,7 +83,6 @@ router.post("/orders", async (req, res) => {
 
 // payment verify api
 router.post("/verify", async (req, res) => {
-  
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
@@ -94,18 +92,21 @@ router.post("/verify", async (req, res) => {
       .update(sign.toString())
       .digest("hex");
     if (razorpay_signature === expectedSign) {
-     let shiprocketOrder= await paymentFunc.createShiprocketOrder({order_id:razorpay_order_id,
-        sub_total:req.body.sub_total,
-        products:req.body.products,billing_address:req.body.billing_address})
+      let shiprocketOrder = await paymentFunc.createShiprocketOrder({
+        order_id: razorpay_order_id,
+        sub_total: req.body.sub_total,
+        products: req.body.products,
+        billing_address: req.body.billing_address,
+      });
       const order = Order({
         isPaid: true,
-        user_id:req.body.user_id,
+        user_id: req.body.user_id,
         amount: req.body.amount,
-          order_id: razorpay_order_id,
-          shipment_id:shiprocketOrder.payload.shipment_id,
-        shiprocket_orderid:shiprocketOrder.payload.order_id,
+        order_id: razorpay_order_id,
+        shipment_id: shiprocketOrder.payload.shipment_id,
+        shiprocket_orderid: shiprocketOrder.payload.order_id,
         // order_shipment_id:shiprocketOrder.payload.order_shipment_id,
-        sub_total:req.body.sub_total,
+        sub_total: req.body.sub_total,
         razorpay: {
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
@@ -114,22 +115,24 @@ router.post("/verify", async (req, res) => {
       });
       const newOrder = await order.save();
       // console.log(newOrder);
-      const newOrderProduct= new OrderProduct({
+      const newOrderProduct = new OrderProduct({
         order_id: razorpay_order_id,
-          shipment_id:shiprocketOrder.payload.shipment_id,
-          totalAmount: req.body.amount,
-        products:req.body.products,
-        billing_address:req.body.billing_address
+        shipment_id: shiprocketOrder.payload.shipment_id,
+        totalAmount: req.body.amount,
+        products: req.body.products,
+        billing_address: req.body.billing_address,
       });
       const orderProduct = await newOrderProduct.save();
-        // create order in shiprocket
-      res.status(200).json({ message: "payment verfified successfully",orderProduct });
+      // create order in shiprocket
+      res
+        .status(200)
+        .json({ message: "payment verfified successfully", orderProduct });
     } else {
       const order = Order({
         isPaid: false,
         amount: req.body.amount,
-        user_id:req.body.user_id,
-        sub_total:req.body.sub_total,
+        user_id: req.body.user_id,
+        sub_total: req.body.sub_total,
         razorpay: {
           orderId: razorpay_order_id || null,
           paymentId: razorpay_payment_id || null,
@@ -141,31 +144,33 @@ router.post("/verify", async (req, res) => {
       res.status(400).json("Invalid signature sent");
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 });
-router.post("/getUserOrders",auth, async (req, res) => {
-  console.log(req.user)
-  const orders = await Order.find({user_id:req.user.user_id});
+router.post("/getUserOrders", auth, async (req, res) => {
+  console.log(req.user);
+  const orders = await Order.find({ user_id: req.user.user_id });
+  console.log(orders);
   res.status(200).json(orders);
-})
-router.post("/getUserOrderDetails",auth, async (req, res) => {
-console.log('shipment')
-const order = await OrderProduct.find({order_id:req.body.order_id});
-  const trackShipment=await paymentFunc.trackShipment({shipment_id:order[0].shipment_id});
-console.log('shipment')
-console.log(trackShipment)
-  res.status(200).json({order:order[0],track_shipment:trackShipment});
-})
+});
+router.post("/getUserOrderDetails", auth, async (req, res) => {
+  console.log("shipment");
+  const order = await OrderProduct.find({ order_id: req.body.order_id });
+  const trackShipment = await paymentFunc.trackShipment({
+    shipment_id: order[0].shipment_id,
+  });
+  console.log("shipment");
+  console.log(trackShipment);
+  res.status(200).json({ order: order[0], track_shipment: trackShipment });
+});
 router.post("/getShipment", async (req, res) => {
-  await paymentFunc.getShipment(req.body)
-
-})
+  await paymentFunc.getShipment(req.body);
+});
 router.post("/trackShipment", async (req, res) => {
-  await paymentFunc.getShipment(req.body)
-})
-  router.post("/add_billing_address", async (req, res) => {
+  await paymentFunc.getShipment(req.body);
+});
+router.post("/add_billing_address", async (req, res) => {
   // await User.findByIdAndUpdate(req.user.user_id, req.body, {
   //   useFindAndModify: false,
   // });
@@ -183,9 +188,8 @@ router.post("/trackShipment", async (req, res) => {
 router.post("/getBillingAddress", async (req, res) => {
   try {
     var user = await User.findById(req.body.user_id);
-
     res.status(200).json({
-      billing_address: user.billing_address,
+      billing_address: user?.billing_address,
     });
   } catch (error) {
     console.log(error);
@@ -195,9 +199,9 @@ router.post("/getBillingAddress", async (req, res) => {
 router.post("/deleteBillingAddress", async (req, res) => {
   try {
     var user = await User.findById(req.body.user_id);
-    const billing_address=user.billing_address
-    for(addr of billing_address){
-      if(addr.id===req.body.address_id){
+    const billing_address = user.billing_address;
+    for (addr of billing_address) {
+      if (addr.id === req.body.address_id) {
         await user.updateOne({
           $pull: { billing_address: addr },
         });
@@ -205,7 +209,7 @@ router.post("/deleteBillingAddress", async (req, res) => {
     }
 
     res.status(200).json({
-      success:true,
+      success: true,
       billing_address: user.billing_address,
     });
   } catch (error) {
