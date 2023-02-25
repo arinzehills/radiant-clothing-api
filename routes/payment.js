@@ -170,6 +170,22 @@ router.post("/getShipment", async (req, res) => {
 router.post("/trackShipment", async (req, res) => {
   await paymentFunc.getShipment(req.body);
 });
+router.post("/getServiceability", async (req, res) => {
+  const { token } = await paymentFunc.authShiprocket();
+  var response = await fetch(
+    `https://apiv2.shiprocket.in/v1/external/courier/international/serviceability?cod=${0}&pickup_postcode=${226018}
+    &delivery_postcode=${49}&weight=${3}&delivery_country=${"IN"}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  const json = await response.json();
+  console.log(json);
+  res.status(200).json(json);
+});
 router.post("/add_billing_address", async (req, res) => {
   // await User.findByIdAndUpdate(req.user.user_id, req.body, {
   //   useFindAndModify: false,

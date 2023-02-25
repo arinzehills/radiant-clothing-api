@@ -235,9 +235,12 @@ router.post("/reviewProduct", auth, async (req, res) => {
   const user_id = req.user.user_id;
   const reviewsIds = [];
   const rate = {
+    user_id: user_id,
+    user_name: req.user?.full_name,
     user_email: req.user.email,
     ratings: req.body.rate,
     details: req.body.detail,
+    reviewOn: Date.now(),
   };
   console.log("product");
   console.log(product);
