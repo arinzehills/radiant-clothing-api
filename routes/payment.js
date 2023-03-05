@@ -8,6 +8,8 @@ const auth = require("../middleware/auth");
 const { default: fetch } = require("node-fetch");
 const moment = require("moment/moment");
 const paymentFunc = require("../controllers/payment.controller");
+const short = require("shortid");
+const shortid = require("shortid");
 
 function isToday(date) {
   const today = new Date();
@@ -30,54 +32,20 @@ router.post("/order", (req, res) => {
       currency: "INR",
       receipt: crypto.randomBytes(20).toString("hex"),
     };
-    instance.orders.create(options, (error, order) => {
+    instance.orders.create(options, async (error, order) => {
       if (error) {
         console.log("error encountered");
         console.log(error);
         res.status(500).json({ message: "Something went wrong" });
       }
       order.KEY_ID = process.env.KEY_ID;
+      console.log("order");
+
       res.status(200).json({ data: order });
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Something went wrong" });
-  }
-});
-
-// get orders
-router.post("/orders", async (req, res) => {
-  const analytics = {};
-  let totalRevenue = 0;
-  let recentOrders = [];
-  let totalSalesToday = 0;
-
-  try {
-    const orders = await Order.find();
-    var users = await User.find({ user_type: "business_user" }).lean();
-
-    // get the total sales
-    orders.forEach((order) => (totalRevenue += order.amount));
-
-    // get 5 recent orders
-    recentOrders = orders.filter((_, idx) => idx < 5);
-
-    // get total orders today.
-    let todayTransactions = orders.filter((order) => isToday(order.createdAt));
-    todayTransactions.forEach((item) => {
-      totalSalesToday += item.amount;
-    });
-    // append the populated variable to analytics object
-    analytics.totalRevenue = totalRevenue;
-    analytics.recentOrders = recentOrders;
-    analytics.totalOrdersToday = todayTransactions.length;
-    analytics.totalSalesToday = totalSalesToday;
-    console.log(totalSalesToday);
-
-    res.status(200).json({ users: users.length, orders, analytics });
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({ error });
   }
 });
 
@@ -148,6 +116,42 @@ router.post("/verify", async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 });
+// get orders
+router.post("/orders", async (req, res) => {
+  const analytics = {};
+  let totalRevenue = 0;
+  let recentOrders = [];
+  let totalSalesToday = 0;
+
+  try {
+    const orders = await Order.find();
+    var users = await User.find({ user_type: "business_user" }).lean();
+
+    // get the total sales
+    orders.forEach((order) => (totalRevenue += order.amount));
+
+    // get 5 recent orders
+    recentOrders = orders.filter((_, idx) => idx < 5);
+
+    // get total orders today.
+    let todayTransactions = orders.filter((order) => isToday(order.createdAt));
+    todayTransactions.forEach((item) => {
+      totalSalesToday += item.amount;
+    });
+    // append the populated variable to analytics object
+    analytics.totalRevenue = totalRevenue;
+    analytics.recentOrders = recentOrders;
+    analytics.totalOrdersToday = todayTransactions.length;
+    analytics.totalSalesToday = totalSalesToday;
+    console.log(totalSalesToday);
+
+    res.status(200).json({ users: users.length, orders, analytics });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ error });
+  }
+});
+
 router.post("/getUserOrders", auth, async (req, res) => {
   console.log(req.user);
   const orders = await Order.find({ user_id: req.user.user_id });
@@ -172,9 +176,30 @@ router.post("/trackShipment", async (req, res) => {
 });
 router.post("/getServiceability", async (req, res) => {
   const { token } = await paymentFunc.authShiprocket();
+  console.log("r-billing_address");
+  let phone = req.body.billing_address.phoneNumber;
+  req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
+
+  let shiprocketOrder = await paymentFunc.createShiprocketOrder({
+    order_id: shortid(),
+    sub_total: req.body.sub_total,
+    products: req.body.products,
+    billing_address: req.body.billing_address,
+  });
+  console.log("shiprocketOrder");
+  if (shiprocketOrder.status_code != 1) {
+    shiprocketOrder.status = shiprocketOrder.status_code;
+    console.log(shiprocketOrder);
+    return res.status(200).json(shiprocketOrder);
+  }
   var response = await fetch(
-    `https://apiv2.shiprocket.in/v1/external/courier/international/serviceability?cod=${0}&pickup_postcode=${226018}
-    &delivery_postcode=${49}&weight=${3}&delivery_country=${"IN"}`,
+    `https://apiv2.shiprocket.in/v1/external/courier/serviceability?
+    &order_id=${
+      shiprocketOrder.order_id
+    }&weight=${3}&delivery_country=${"IN"}&pickup_postcode=` +
+      110078 +
+      "&cod=" +
+      0,
     {
       headers: {
         "Content-Type": "application/json",
@@ -184,7 +209,14 @@ router.post("/getServiceability", async (req, res) => {
   );
   const json = await response.json();
   console.log(json);
-  res.status(200).json(json);
+  if (json.status != 200) {
+    return res.status(200).json(json);
+  }
+  var lowestCharge = paymentFunc.getLowestFreightCharge(
+    json.data.available_courier_companies
+  );
+
+  res.status(200).json({ status: json.status, lowest_charge: lowestCharge });
 });
 router.post("/add_billing_address", async (req, res) => {
   // await User.findByIdAndUpdate(req.user.user_id, req.body, {
