@@ -176,9 +176,11 @@ router.post("/trackShipment", async (req, res) => {
 });
 router.post("/getServiceability", async (req, res) => {
   const { token } = await paymentFunc.authShiprocket();
-  console.log("r-billing_address");
-  let phone = req.body.billing_address.phoneNumber;
-  req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
+  let phone = req.body.billing_address.phoneNumber.replace(/ +/g, "");
+
+  if (phone.length > 10) {
+    req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
+  }
 
   let shiprocketOrder = await paymentFunc.createShiprocketOrder({
     order_id: shortid(),
