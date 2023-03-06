@@ -176,6 +176,9 @@ router.post("/trackShipment", async (req, res) => {
 });
 router.post("/getServiceability", async (req, res) => {
   const { token } = await paymentFunc.authShiprocket();
+  if (!req.body.billing_address) {
+    return;
+  }
   let phone = req.body.billing_address.phoneNumber.replace(/ +/g, "");
 
   if (phone.length > 10) {
