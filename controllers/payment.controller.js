@@ -28,7 +28,12 @@ const authShiprocket = async () => {
 
 const createShiprocketOrder = async (data) => {
   let total_discount = 0;
+  let total_length = 0;
+  let total_breadth = 0;
+  let total_height = 0;
+  let total_weight = 0;
   for (product of data.products) {
+    console.log(product.length);
     product.name = product.product_name;
     product.selling_price = product.price;
     product.sku = product.product_name + product.price;
@@ -36,8 +41,11 @@ const createShiprocketOrder = async (data) => {
     product.units = product.discount_price;
     product.tax = product.gst;
     total_discount += product.price - product.discount_price;
+    total_length += total_length + eval(product.length);
+    total_breadth += total_breadth + eval(product.breadth);
+    total_height += total_height + eval(product.height);
+    total_weight += total_weight + eval(product.weight);
   }
-
   const { token } = await authShiprocket();
   var res = await fetch(
     "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc",
@@ -71,10 +79,10 @@ const createShiprocketOrder = async (data) => {
         transaction_charges: 0,
         total_discount: total_discount,
         sub_total: data.sub_total,
-        length: 10,
-        breadth: 15,
-        height: 20,
-        weight: 2.5,
+        length: total_length,
+        breadth: total_breadth,
+        height: total_height,
+        weight: total_weight,
       }),
     }
   );
