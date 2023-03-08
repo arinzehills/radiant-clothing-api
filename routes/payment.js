@@ -2,7 +2,6 @@ const router = require("express").Router();
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Order = require("../models/Order.model");
-const OrderProduct = require("../models/order_product.model");
 const User = require("../models/user.model");
 const auth = require("../middleware/auth");
 const { default: fetch } = require("node-fetch");
@@ -21,14 +20,16 @@ function isToday(date) {
 
 // order api
 router.post("/order", (req, res) => {
+  console.log("req.body.amount");
   console.log(req.body.amount);
+  console.log(req.body.amount.toFixed(0));
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
       key_secret: process.env.KEY_SECRET,
     });
     const options = {
-      amount: req.body.amount * 100,
+      amount: req.body.amount.toFixed(0) * 100,
       currency: "INR",
       receipt: crypto.randomBytes(20).toString("hex"),
     };
@@ -60,41 +61,44 @@ router.post("/verify", async (req, res) => {
       .update(sign.toString())
       .digest("hex");
     if (razorpay_signature === expectedSign) {
+      let phone = req.body.billing_address.phoneNumber.replace(/ +/g, "");
+      console.log(phone.length > 10);
+      if (phone.length > 10) {
+        req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
+      }
+
       let shiprocketOrder = await paymentFunc.createShiprocketOrder({
-        order_id: razorpay_order_id,
+        order_id: shortid(),
         sub_total: req.body.sub_total,
         products: req.body.products,
         billing_address: req.body.billing_address,
       });
-      const order = Order({
+      console.log("shiprocketOrder");
+      console.log(shiprocketOrder);
+      if (shiprocketOrder.status_code != 1) {
+        shiprocketOrder.status = shiprocketOrder.status_code;
+        console.log(shiprocketOrder);
+        return res.status(200).json(shiprocketOrder);
+      }
+      const order = await Order({
         isPaid: true,
         user_id: req.body.user_id,
         amount: req.body.amount,
-        order_id: razorpay_order_id,
-        shipment_id: shiprocketOrder.payload.shipment_id,
-        shiprocket_orderid: shiprocketOrder.payload.order_id,
-        // order_shipment_id:shiprocketOrder.payload.order_shipment_id,
+        order_id: shiprocketOrder.order_id,
+        shipment_id: shiprocketOrder.shipment_id,
+        products: req.body.products,
+        billing_address: req.body.billing_address,
         sub_total: req.body.sub_total,
         razorpay: {
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
           signature: razorpay_signature,
         },
-      });
-      const newOrder = await order.save();
-      // console.log(newOrder);
-      const newOrderProduct = new OrderProduct({
-        order_id: razorpay_order_id,
-        shipment_id: shiprocketOrder.payload.shipment_id,
-        totalAmount: req.body.amount,
-        products: req.body.products,
-        billing_address: req.body.billing_address,
-      });
-      const orderProduct = await newOrderProduct.save();
-      // create order in shiprocket
-      res
-        .status(200)
-        .json({ message: "payment verfified successfully", orderProduct });
+      }).save();
+      console.log("mainorder");
+      console.log(order);
+
+      res.status(200).json({ message: "payment verified successfully", order });
     } else {
       const order = Order({
         isPaid: false,
@@ -160,7 +164,7 @@ router.post("/getUserOrders", auth, async (req, res) => {
 });
 router.post("/getUserOrderDetails", auth, async (req, res) => {
   console.log("shipment");
-  const order = await OrderProduct.find({ order_id: req.body.order_id });
+  const order = await Order.find({ order_id: req.body.order_id });
   const trackShipment = await paymentFunc.trackShipment({
     shipment_id: order[0].shipment_id,
   });
@@ -179,30 +183,16 @@ router.post("/getServiceability", async (req, res) => {
   if (!req.body.billing_address) {
     return;
   }
-  let phone = req.body.billing_address.phoneNumber.replace(/ +/g, "");
-
-  if (phone.length > 10) {
-    req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
-  }
-
-  let shiprocketOrder = await paymentFunc.createShiprocketOrder({
-    order_id: shortid(),
-    sub_total: req.body.sub_total,
-    products: req.body.products,
-    billing_address: req.body.billing_address,
-  });
-  console.log("shiprocketOrder");
-  if (shiprocketOrder.status_code != 1) {
-    shiprocketOrder.status = shiprocketOrder.status_code;
-    console.log(shiprocketOrder);
-    return res.status(200).json(shiprocketOrder);
+  let total_weight = 0;
+  for (product of req.body.products) {
+    total_weight += total_weight + eval(product.weight);
   }
   var response = await fetch(
-    `https://apiv2.shiprocket.in/v1/external/courier/serviceability?
-    &order_id=${
-      shiprocketOrder.order_id
-    }&weight=${3}&delivery_country=${"IN"}&pickup_postcode=` +
+    `https://apiv2.shiprocket.in/v1/external/courier/serviceability/?
+    &cod=${0}&weight=${total_weight}&delivery_country=${"IN"}&pickup_postcode=` +
       110078 +
+      "&delivery_postcode=" +
+      req.body.billing_address.postalCode +
       "&cod=" +
       0,
     {

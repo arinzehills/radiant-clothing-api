@@ -3,12 +3,14 @@ const mongoose = require("mongoose");
 const orderSchema = new mongoose.Schema(
   {
     isPaid: Boolean,
-      order_id:{ type: String, default: "" },
-      user_id:String,
+    order_id: { type: String, default: "" },
+    user_id: String,
     amount: Number,
     sub_total: Number,
-    shipment_id:String,
-    shiprocket_orderid:String,
+    shipment_id: String,
+    shiprocket_orderid: String,
+    billing_address: { type: Object, default: "" },
+    products: { type: Array, default: [] },
     razorpay: {
       paymentId: String,
       orderId: String,
@@ -19,4 +21,3 @@ const orderSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Order", orderSchema);
-

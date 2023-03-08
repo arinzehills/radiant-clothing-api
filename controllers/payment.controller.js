@@ -33,7 +33,6 @@ const createShiprocketOrder = async (data) => {
   let total_height = 0;
   let total_weight = 0;
   for (product of data.products) {
-    console.log(product.length);
     product.name = product.product_name;
     product.selling_price = product.price;
     product.sku = product.product_name + product.price;
@@ -59,7 +58,7 @@ const createShiprocketOrder = async (data) => {
         order_id: data.order_id,
         // "order_id": "224-447",
         order_date: moment().format("MM/DD/YYYY hh:mm:ss"),
-        channel_id: "",
+        channel_id: "679824",
         payment_method: "card",
         billing_customer_name: data.billing_address.fullname ?? "Jon",
         billing_last_name: data.billing_address.fullname ?? "Jon",
@@ -72,6 +71,7 @@ const createShiprocketOrder = async (data) => {
         billing_state: data.billing_address.state,
         billing_country: data.billing_address.country,
         pickup_location: "Shavez 3",
+        payment_method: "Prepaid",
         shipping_is_billing: true,
         order_items: data.products,
         shipping_charges: 0,
