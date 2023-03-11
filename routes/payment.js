@@ -51,6 +51,19 @@ router.post("/order", (req, res) => {
 });
 
 // payment verify api
+router.post("/without-verify", async (req, res) => {
+  console.log("req.body vrs");
+  console.log(req.body);
+  try {
+    var order = await paymentFunc.createOrder(req.body);
+    res
+      .status(200)
+      .json({ success: true, message: "order placed successfully", order });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
 router.post("/verify", async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -61,44 +74,13 @@ router.post("/verify", async (req, res) => {
       .update(sign.toString())
       .digest("hex");
     if (razorpay_signature === expectedSign) {
-      let phone = req.body.billing_address.phoneNumber.replace(/ +/g, "");
-      console.log(phone.length > 10);
-      if (phone.length > 10) {
-        req.body.billing_address.phoneNumber = parseInt(phone.slice(3));
-      }
-
-      let shiprocketOrder = await paymentFunc.createShiprocketOrder({
-        order_id: shortid(),
-        sub_total: req.body.sub_total,
-        products: req.body.products,
-        billing_address: req.body.billing_address,
-      });
-      console.log("shiprocketOrder");
-      console.log(shiprocketOrder);
-      if (shiprocketOrder.status_code != 1) {
-        shiprocketOrder.status = shiprocketOrder.status_code;
-        console.log(shiprocketOrder);
-        return res.status(200).json(shiprocketOrder);
-      }
-      const order = await Order({
-        isPaid: true,
-        user_id: req.body.user_id,
-        amount: req.body.amount,
-        order_id: shiprocketOrder.order_id,
-        shipment_id: shiprocketOrder.shipment_id,
-        products: req.body.products,
-        billing_address: req.body.billing_address,
-        sub_total: req.body.sub_total,
-        razorpay: {
-          orderId: razorpay_order_id,
-          paymentId: razorpay_payment_id,
-          signature: razorpay_signature,
-        },
-      }).save();
-      console.log("mainorder");
+      var order = await paymentFunc.createOrder(req.body);
       console.log(order);
-
-      res.status(200).json({ message: "payment verified successfully", order });
+      res.status(200).json({
+        success: true,
+        message: "payment verified successfully",
+        order,
+      });
     } else {
       const order = Order({
         isPaid: false,
@@ -113,7 +95,9 @@ router.post("/verify", async (req, res) => {
       });
       const newOrder = await order.save();
       console.log(newOrder);
-      res.status(400).json("Invalid signature sent");
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid signature sent" });
     }
   } catch (error) {
     console.log(error);
@@ -149,7 +133,9 @@ router.post("/orders", async (req, res) => {
     analytics.totalSalesToday = totalSalesToday;
     console.log(totalSalesToday);
 
-    res.status(200).json({ users: users.length, orders, analytics });
+    res
+      .status(200)
+      .json({ users: users.length, orders: orders.reverse(), analytics });
   } catch (error) {
     console.log(error);
     res.status(400).json({ error });
@@ -160,24 +146,17 @@ router.post("/getUserOrders", auth, async (req, res) => {
   console.log(req.user);
   const orders = await Order.find({ user_id: req.user.user_id });
   console.log(orders);
-  res.status(200).json(orders);
+  res.status(200).json(orders.reverse());
 });
 router.post("/getUserOrderDetails", auth, async (req, res) => {
-  console.log("shipment");
   const order = await Order.find({ order_id: req.body.order_id });
   const trackShipment = await paymentFunc.trackShipment({
     shipment_id: order[0].shipment_id,
   });
-  console.log("shipment");
-  console.log(trackShipment);
+
   res.status(200).json({ order: order[0], track_shipment: trackShipment });
 });
-router.post("/getShipment", async (req, res) => {
-  await paymentFunc.getShipment(req.body);
-});
-router.post("/trackShipment", async (req, res) => {
-  await paymentFunc.getShipment(req.body);
-});
+
 router.post("/getServiceability", async (req, res) => {
   const { token } = await paymentFunc.authShiprocket();
   if (!req.body.billing_address) {
@@ -189,12 +168,12 @@ router.post("/getServiceability", async (req, res) => {
   }
   var response = await fetch(
     `https://apiv2.shiprocket.in/v1/external/courier/serviceability/?
-    &cod=${0}&weight=${total_weight}&delivery_country=${"IN"}&pickup_postcode=` +
+ &weight=${total_weight}&delivery_country=${"IN"}&pickup_postcode=` +
       110078 +
       "&delivery_postcode=" +
       req.body.billing_address.postalCode +
       "&cod=" +
-      0,
+      req.body.cod,
     {
       headers: {
         "Content-Type": "application/json",
@@ -203,6 +182,7 @@ router.post("/getServiceability", async (req, res) => {
     }
   );
   const json = await response.json();
+  console.log("sevr");
   console.log(json);
   if (json.status != 200) {
     return res.status(200).json(json);

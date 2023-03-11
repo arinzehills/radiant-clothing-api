@@ -1,4 +1,5 @@
-const ShipRocketOrder = require("../models/shiprocket_order.model");
+const Order = require("../models/Order.model");
+const shortid = require("shortid");
 
 const { default: fetch } = require("node-fetch");
 const moment = require("moment/moment");
@@ -37,7 +38,7 @@ const createShiprocketOrder = async (data) => {
     product.selling_price = product.price;
     product.sku = product.product_name + product.price;
     product.discount = product.discount_price;
-    product.units = product.discount_price;
+    product.units = product.quantityToBuy;
     product.tax = product.gst;
     total_discount += product.price - product.discount_price;
     total_length += total_length + eval(product.length);
@@ -71,7 +72,7 @@ const createShiprocketOrder = async (data) => {
         billing_state: data.billing_address.state,
         billing_country: data.billing_address.country,
         pickup_location: "Shavez 3",
-        payment_method: "Prepaid",
+        payment_method: data.cod == 0 ? "Prepaid" : "COD",
         shipping_is_billing: true,
         order_items: data.products,
         shipping_charges: 0,
@@ -107,33 +108,44 @@ const getLowestFreightCharge = (available_courier_companies) => {
   }
   return lowestCharge;
 };
-const returnShipment = async (data) => {
-  const { token } = await authShiprocket();
-  var res = await fetch(
-    "https://apiv2.shiprocket.in/v1/external/shipments/create/return-shipment",
-    {
-      headers: headers(token),
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
 
-  const json = await res.json();
-  console.log("ship rocket shipment has been created");
-  console.log(json);
-};
-const getShipment = async (data) => {
-  const { token } = await authShiprocket();
-  var res = await fetch(
-    "https://apiv2.shiprocket.in/v1/external/shipments" + data.shipment_id,
-    {
-      headers: headers(token),
-    }
-  );
+const createOrder = async (data) => {
+  let phone = data.billing_address.phoneNumber.replace(/ +/g, "");
+  console.log(phone.length > 10);
+  if (phone.length > 10) {
+    data.billing_address.phoneNumber = parseInt(phone.slice(3));
+  }
 
-  const json = await res.json();
-  console.log("ship rocket shipment has been retrived");
-  console.log(json);
+  let shiprocketOrder = await createShiprocketOrder({
+    order_id: shortid(),
+    sub_total: data.sub_total,
+    products: data.products,
+    billing_address: data.billing_address,
+    cod: data.cod,
+  });
+  if (shiprocketOrder.status_code != 1) {
+    shiprocketOrder.status = shiprocketOrder.status_code;
+    console.log(shiprocketOrder);
+    return res.status(200).json(shiprocketOrder);
+  }
+  const order = await Order({
+    isPaid: true,
+    user_id: data.user_id,
+    amount: data.amount,
+    order_id: shiprocketOrder.order_id,
+    shipment_id: shiprocketOrder.shipment_id,
+    products: data.products,
+    billing_address: data.billing_address,
+    sub_total: data.sub_total,
+    payment_method: (data.cod = 1 ? "COD" : "Prepaid"),
+    razorpay: {
+      orderId: (data.cod = 1 ? "" : razorpay_order_id),
+      paymentId: (data.cod = 1 ? "" : razorpay_payment_id),
+      signature: (data.cod = 1 ? "" : razorpay_signature),
+    },
+  }).save();
+
+  return order;
 };
 const trackShipment = async (data) => {
   const { token } = await authShiprocket();
@@ -153,8 +165,7 @@ const trackShipment = async (data) => {
 };
 module.exports = {
   createShiprocketOrder,
-  returnShipment,
-  getShipment,
+  createOrder,
   trackShipment,
   authShiprocket,
   getLowestFreightCharge,

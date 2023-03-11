@@ -9,6 +9,7 @@ const orderSchema = new mongoose.Schema(
     sub_total: Number,
     shipment_id: String,
     shiprocket_orderid: String,
+    payment_method: String,
     billing_address: { type: Object, default: "" },
     products: { type: Array, default: [] },
     razorpay: {
