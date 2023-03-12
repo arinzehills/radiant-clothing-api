@@ -78,7 +78,7 @@ const createShiprocketOrder = async (data) => {
         shipping_charges: 0,
         giftwrap_charges: 0,
         transaction_charges: 0,
-        total_discount: total_discount,
+        total_discount: 0,
         sub_total: data.sub_total,
         length: total_length,
         breadth: total_breadth,

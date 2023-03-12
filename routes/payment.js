@@ -163,12 +163,16 @@ router.post("/getServiceability", async (req, res) => {
     return;
   }
   let total_weight = 0;
+  let quantity = 0;
+
   for (product of req.body.products) {
     total_weight += total_weight + eval(product.weight);
+    quantity += quantity + eval(product.quantityToBuy);
+    // product.quantityToBuy;
   }
   var response = await fetch(
     `https://apiv2.shiprocket.in/v1/external/courier/serviceability/?
- &weight=${total_weight}&delivery_country=${"IN"}&pickup_postcode=` +
+ &weight=${total_weight * quantity}&delivery_country=${"IN"}&pickup_postcode=` +
       110078 +
       "&delivery_postcode=" +
       req.body.billing_address.postalCode +
@@ -182,8 +186,7 @@ router.post("/getServiceability", async (req, res) => {
     }
   );
   const json = await response.json();
-  console.log("sevr");
-  console.log(json);
+
   if (json.status != 200) {
     return res.status(200).json(json);
   }
@@ -212,7 +215,33 @@ router.post("/getBillingAddress", async (req, res) => {
   try {
     var user = await User.findById(req.body.user_id);
     res.status(200).json({
-      billing_address: user?.billing_address,
+      billing_address: user?.billing_address.reverse(),
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+router.post("/editBillingAddress", async (req, res) => {
+  console.log("edit it s hitted");
+  try {
+    var user = await User.findById(req.body.user_id);
+    const billing_address = user.billing_address;
+    for (let addr of billing_address) {
+      if (addr.id === req.body.address_id) {
+        await user.updateOne({
+          $pull: { billing_address: addr },
+        });
+        await user.updateOne({
+          $push: { billing_address: req.body.billing_address },
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      billing_address: user.billing_address,
     });
   } catch (error) {
     console.log(error);
