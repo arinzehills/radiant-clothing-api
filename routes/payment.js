@@ -55,7 +55,7 @@ router.post("/without-verify", async (req, res) => {
   console.log("req.body vrs");
   console.log(req.body);
   try {
-    var order = await paymentFunc.createOrder(req.body);
+    var order = await paymentFunc.createOrder({ ...req.body, cod: 1 });
     res
       .status(200)
       .json({ success: true, message: "order placed successfully", order });
@@ -74,7 +74,7 @@ router.post("/verify", async (req, res) => {
       .update(sign.toString())
       .digest("hex");
     if (razorpay_signature === expectedSign) {
-      var order = await paymentFunc.createOrder(req.body);
+      var order = await paymentFunc.createOrder({ ...req.body, cod: 0 });
       console.log(order);
       res.status(200).json({
         success: true,
