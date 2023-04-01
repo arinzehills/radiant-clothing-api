@@ -4,6 +4,7 @@ const orderSchema = new mongoose.Schema(
   {
     isPaid: Boolean,
     order_id: { type: String, default: "" },
+    order_status: { type: String, default: "Active" }, //Active, delivered, returned
     user_id: String,
     amount: Number,
     sub_total: Number,

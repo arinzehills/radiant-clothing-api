@@ -185,12 +185,7 @@ router.post("/getProducts", async (req, res) => {
 router.post("/getProduct", async (req, res) => {
   try {
     var product = await Product.findById(req.body.id).lean();
-    console.log(product);
-    res.status(200).json({
-      success: true,
-      message: "fetched Successfully 🙌 ",
-      product: product,
-    });
+    res.status(200).json(product);
   } catch (err) {
     console.log(err);
     res.status(200).json({
@@ -262,6 +257,40 @@ router.post("/reviewProduct", auth, async (req, res) => {
     success: true,
     message: "rate Successfully 🙌 ",
     rate: rate,
+  });
+});
+router.post("/deleteReview", auth, async (req, res) => {
+  console.log("delete Review Hitted at back end");
+  console.log(req.body.product_id);
+  console.log(req.body.ratedOn);
+  const product = await Product.findById(req.body.product_id);
+  const user_id = req.user.user_id;
+  const reviewsIds = [];
+
+  product?.reviews.forEach((rate) => {
+    if (rate.reviewOn == req.body.ratedOn) {
+      product.reviews.pull(rate);
+    }
+  });
+  const index = reviewsIds.indexOf(req.user.email);
+  // if (index >= 0) {
+  //   console.log("users has given rating already");
+  //   return res.status(200).json({
+  //     success: false,
+  //     message: "You have given rating on this product already 🙌 ",
+  //     rate: rate,
+  //   });
+  // }
+
+  const productUpdate = await Product.findByIdAndUpdate(product._id, product, {
+    new: true,
+  });
+  console.log("productUpdate");
+  console.log(productUpdate);
+  res.status(200).json({
+    success: true,
+    message: "rate Successfully 🙌 ",
+    product: product,
   });
 });
 module.exports = router;

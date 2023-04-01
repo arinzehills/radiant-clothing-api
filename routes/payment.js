@@ -7,7 +7,6 @@ const auth = require("../middleware/auth");
 const { default: fetch } = require("node-fetch");
 const moment = require("moment/moment");
 const paymentFunc = require("../controllers/payment.controller");
-const short = require("shortid");
 const shortid = require("shortid");
 
 function isToday(date) {
@@ -148,14 +147,6 @@ router.post("/getUserOrders", auth, async (req, res) => {
   console.log(orders);
   res.status(200).json(orders.reverse());
 });
-router.post("/getUserOrderDetails", auth, async (req, res) => {
-  const order = await Order.find({ order_id: req.body.order_id });
-  const trackShipment = await paymentFunc.trackShipment({
-    shipment_id: order[0].shipment_id,
-  });
-
-  res.status(200).json({ order: order[0], track_shipment: trackShipment });
-});
 
 router.post("/getServiceability", async (req, res) => {
   const { token } = await paymentFunc.authShiprocket();
@@ -164,7 +155,6 @@ router.post("/getServiceability", async (req, res) => {
   }
   let total_weight = 0;
   let quantity = 0;
-
   for (product of req.body.products) {
     total_weight += total_weight + eval(product.weight);
     quantity += quantity + eval(product.quantityToBuy);

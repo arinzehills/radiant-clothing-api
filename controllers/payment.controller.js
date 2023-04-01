@@ -95,6 +95,75 @@ const createShiprocketOrder = async (data) => {
   // await createShipment(json)
   return json;
 };
+const returnShiprocketOrder = async (data) => {
+  let total_discount = 0;
+  let total_length = 0;
+  let total_breadth = 0;
+  let total_height = 0;
+  let total_weight = 0;
+  for (product of data.products) {
+    product.name = product.product_name;
+    product.selling_price = product.price;
+    product.sku = product.product_name + product.price;
+    product.discount = product.discount_price;
+    product.units = product.quantityToBuy;
+    product.tax = product.gst;
+    total_discount += product.price - product.discount_price;
+    total_length += total_length + eval(product.length);
+    total_breadth += total_breadth + eval(product.breadth);
+    total_height += total_height + eval(product.height);
+    total_weight += total_weight + eval(product.weight);
+  }
+  const { token } = await authShiprocket();
+  var res = await fetch(
+    "https://apiv2.shiprocket.in/v1/external/orders/create/return",
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      method: "POST",
+      body: JSON.stringify({
+        order_id: data.order_id,
+        // "order_id": "224-447",
+        order_date: data.order_date,
+        channel_id: "679824",
+        shipping_customer_name: data.billing_address.fullname ?? "Jon",
+        shipping_last_name: data.billing_address.fullname ?? "Jon",
+        shipping_email: data.billing_address.email,
+        shipping_phone: data.billing_address.phoneNumber,
+        shipping_address: data.billing_address.addressLine1,
+        shipping_address_2: data.billing_address.addressLine2,
+        shipping_pincode: data.billing_address.postalCode,
+        shipping_city: data.billing_address.city,
+        shipping_state: data.billing_address.state,
+        shipping_country: data.billing_address.country,
+        pickup_location: "Shavez 3",
+        pickup_customer_name: data.billing_address.fullname ?? "Jon",
+        pickup_phone: data.billing_address.phoneNumber,
+        pickup_address: data.billing_address.addressLine1,
+        pickup_pincode: data.billing_address.postalCode,
+        pickup_city: data.billing_address.city,
+        pickup_state: data.billing_address.state,
+        pickup_country: data.billing_address.country,
+        payment_method: data.payment_method,
+        order_items: data.products,
+        sub_total: data.sub_total,
+        length: total_length,
+        breadth: total_breadth,
+        height: total_height,
+        weight: total_weight,
+      }),
+    }
+  );
+  const json = await res.json();
+  console.log("ship rocket order has been returned");
+  console.log(json);
+  // const order = await ShipRocketOrder({main_order_id:data.order_id,
+  //     ...json}).save();
+  // await createShipment(json)
+  return json;
+};
 const getLowestFreightCharge = (available_courier_companies) => {
   let maps = available_courier_companies;
   let lowestCharge = maps[0];
@@ -147,6 +216,20 @@ const createOrder = async (data) => {
 
   return order;
 };
+const returnOrder = async (order) => {
+  console.log("return orderhitted");
+  order.order_date = moment(order.createdAt).format("YYYY-MM-DD");
+  console.log(moment(order.createdAt).format("YYYY-MM-DD"));
+  // console.log(order);
+  let shiprocketOrder = await returnShiprocketOrder(order);
+  // if (shiprocketOrder.status_code != 1) {
+  //   shiprocketOrder.status = shiprocketOrder.status_code;
+  //   console.log(shiprocketOrder);
+  //   return res.status(200).json(shiprocketOrder);
+  // }
+
+  return shiprocketOrder;
+};
 const trackShipment = async (data) => {
   const { token } = await authShiprocket();
   var res = await fetch(
@@ -159,12 +242,13 @@ const trackShipment = async (data) => {
   );
 
   const json = await res.json();
-  console.log("ship rocket shipment tracking details");
-  console.log(json);
+  // console.log("ship rocket shipment tracking details");
+  // console.log(json);
   return json;
 };
 module.exports = {
   createShiprocketOrder,
+  returnOrder,
   createOrder,
   trackShipment,
   authShiprocket,
