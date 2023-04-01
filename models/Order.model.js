@@ -8,6 +8,7 @@ const orderSchema = new mongoose.Schema(
     user_id: String,
     amount: Number,
     sub_total: Number,
+    shipping_charges: String,
     shipment_id: String,
     shiprocket_orderid: String,
     payment_method: String,

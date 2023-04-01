@@ -15,14 +15,16 @@ router.post("/returnOrder", auth, async (req, res) => {
   try {
     var order = await paymentFunc.returnOrder(req.body.order);
     order.order_status = order.status;
-    findedOrder = await Order.findByIdAndUpdate(req.body.order._id, order, {
-      useFindAndModify: false,
-    });
+    findedOrder = await Order.findById(req.body.order._id);
+    findedOrder.updateOne({ order_status: order.status });
     console.log("findedOrder");
-    console.log(findedOrder);
-    res
-      .status(200)
-      .json({ success: true, message: "order placed successfully", order });
+    console.log(findedOrder.order_status);
+    // console.log(findedOrder);
+    res.status(200).json({
+      success: true,
+      message: "order returned successfully, we will process it shortly",
+      order,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Something went wrong" });

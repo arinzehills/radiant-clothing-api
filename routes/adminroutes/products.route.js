@@ -289,7 +289,7 @@ router.post("/deleteReview", auth, async (req, res) => {
   console.log(productUpdate);
   res.status(200).json({
     success: true,
-    message: "rate Successfully 🙌 ",
+    message: "Deleted Successfully 🙌 ",
     product: product,
   });
 });
