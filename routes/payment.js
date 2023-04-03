@@ -19,9 +19,6 @@ function isToday(date) {
 
 // order api
 router.post("/order", (req, res) => {
-  console.log("req.body.amount");
-  console.log(req.body.amount);
-  console.log(req.body.amount.toFixed(0));
   try {
     const instance = new Razorpay({
       key_id: process.env.KEY_ID,
@@ -40,6 +37,7 @@ router.post("/order", (req, res) => {
       }
       order.KEY_ID = process.env.KEY_ID;
       console.log("order");
+      console.log(process.env.KEY_ID);
 
       res.status(200).json({ data: order });
     });
@@ -53,6 +51,7 @@ router.post("/order", (req, res) => {
 router.post("/without-verify", async (req, res) => {
   console.log("req.body vrs");
   console.log(req.body);
+  console.log(req.body.shipping_charges);
   try {
     var order = await paymentFunc.createOrder({ ...req.body, cod: 1 });
     res

@@ -75,7 +75,7 @@ const createShiprocketOrder = async (data) => {
         payment_method: data.cod == 0 ? "Prepaid" : "COD",
         shipping_is_billing: true,
         order_items: data.products,
-        shipping_charges: 0,
+        shipping_charges: shipping_charges,
         giftwrap_charges: 0,
         transaction_charges: 0,
         total_discount: 0,
@@ -189,6 +189,7 @@ const createOrder = async (data) => {
     order_id: shortid(),
     sub_total: data.sub_total,
     products: data.products,
+    shipping_charges: shipping_charges,
     billing_address: data.billing_address,
     cod: data.cod,
   });
@@ -198,6 +199,7 @@ const createOrder = async (data) => {
     return res.status(200).json(shiprocketOrder);
   }
   const order = await Order({
+    ...data,
     isPaid: true,
     user_id: data.user_id,
     amount: data.amount,
